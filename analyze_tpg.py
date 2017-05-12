@@ -123,16 +123,28 @@ def parse_rain(month):
         return precipitation
 
 
-def show_plot(mydict):
+def show_plot(mydict,name,x="",y=""):
 # sorted by key, return a list of tuples
     plot = sorted(mydict.items())
 
     # unpack a list of pairs into two tuples
-    x, y = zip(*plot) 
+    x, y = zip(*plot)
+    plt.xlabel(x)
+    plt.ylabel(y)
     plt.plot(x, y)
     plt.fill_between(x, y)
+    plt.savefig(name)
     plt.show()
 
+def show_scatter(dict1,dict2,name,x="",y=""):
+    x = []
+    y = []
+    for key, value in dict2.iteritems():
+        x.append(dict1.get(key,0))
+        y.append(value)
+
+    plt.scatter(x, y)
+    plt.show()
 
 
 print 'Argument List:', str(sys.argv)
@@ -165,6 +177,17 @@ for key, value in pass_per_day.iteritems():
     pass_day[time] = pass_day.get(time,0) + value
 print "Passenger points: " + str(len(pass_day))
 
+# preprocess rain
+rain_day = {}
+for key, value in precipitation.iteritems():
+    if key.hour < 6 or key.hour > 9:
+        continue
+    time = key.replace(hour=0)
+    rain_day[time] = rain_day.get(time,0) + value
+print "Rain data points: " + str(len(precipitation))
+
+
+# Plot peak passengers per week day
 peak_week = {}
 for key, value in pass_day.iteritems():
     time = key.weekday()
@@ -173,37 +196,43 @@ for key, value in pass_day.iteritems():
 for i, val in enumerate(weekday_mult):
     peak_week[i] /= val
 
-show_plot(peak_week)
-
-# preprocess rain
-rain_day = {}
+precip_week = {} # rain per weekday
 for key, value in precipitation.iteritems():
-    time = key.replace(hour=0)
-    rain_day[time] = rain_day.get(time,0) + value
-print "Rain data points: " + str(len(precipitation))
+    time = key.weekday()
+    precip_week[time] = precip_week.get(time,0) + value
+
+for i, val in enumerate(weekday_mult):
+    precip_week[i] /= val
 
 
-x = []
-y = []
+show_plot(peak_week,"peak_week_" + month + ".png")
+
+
+#show_scatter(peak_week,precip_week,"pp_week_" + month + ".png")
+
+
+# Mondays only
+peak_monday = {}
+for key, value in pass_day.iteritems():
+    if(key.weekday() == 4):
+        peak_monday[key] = peak_monday.get(key,0) + value
+rain_monday = {}
 for key, value in rain_day.iteritems():
-    if key.weekday() == 5 or key.weekday() == 6:
-        continue
-    x.append(pass_day.get(key,0))
-    y.append(value)
+    if(key.weekday() == 4):
+        rain_monday[key] = rain_monday.get(key,0) + value
+print peak_monday
+print rain_monday
+show_scatter(peak_monday,rain_monday,"pp_monday_" + month + ".png")
 
 
-plt.scatter(x, y)
-plt.show()
+
+
 
 # other fun:
 pass_per_hour = {} # passengers over the day (hourly)
 for key, value in pass_per_day.iteritems():
     time = key.replace(year=2016,month=1,day=1)
     pass_per_hour[time] = pass_per_hour.get(time,0) + value
-precip_week = {} # rain per weekday
-for key, value in precipitation.iteritems():
-    time = key.weekday()
-    precip_week[time] = precip_week.get(time,0) + value
 
 
 # sorted by key, return a list of tuples
@@ -218,6 +247,6 @@ plt.fill_between(x, y)
 plt.ylim(0.0, plt.ylim()[1]+50)
 plt.xlim(0, 6)
 #plt.savefig('passengers_per_day.png')
-plt.show()
+#plt.show()
 
 
