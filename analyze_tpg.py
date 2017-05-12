@@ -3,6 +3,7 @@ import random
 import csv
 import matplotlib.pyplot as plt
 from datetime import datetime
+import dateutil.parser
 import json
 
 def parse_rides():
@@ -30,44 +31,64 @@ def parse_rides():
                 json.dump(ridedates, f)
         return ridedates
 
-ridedates = parse_rides()
+def parse_passengers(ridedates):
 
-pass_per_hour = {}
-pass_per_weekday = {}
-pass_per_day = {}
+    try:
+        # If JSON file exists, load and return
+        with open('passengers_per_day.json') as f:
+            print "Found JSON file for passengers."
+            pass_isoday = json.load(f)
+            pass_day = {}
+            for key, value in pass_isoday.iteritems():
+                pass_day[dateutil.parser.parse(key)] = value
+            return pass_day
+    except IOError:
+        print "No JSON file found, parsing passenger data."
+        pass_per_hour = {}
+        pass_per_weekday = {}
+        pass_per_day = {}
 
-print "Parsing passenger data."
-with open('QV-Stops-2016-11-nm.csv', 'rb') as stopfile:
-    stopsreader = csv.DictReader(stopfile, delimiter=';')
-    for row in stopsreader:
-        # Ride is only listed if commercial, so check:
-        try:
-            date = datetime.strptime(ridedates[row['course']],"%Y-%m-%d")
-            try:
-                time = datetime.strptime(row['heure_depart_real'], "%H:%M:%S").replace(second=0)
-                weekday = date.weekday()
-
-                isodate = date.isoformat()
-                # Sum up all passengers joining a ride
+        with open('QV-Stops-2016-11-nm.csv', 'rb') as stopfile:
+            stopsreader = csv.DictReader(stopfile, delimiter=';')
+            for row in stopsreader:
+                # Ride is only listed if commercial, so check:
                 try:
-                    pass_per_hour[time] = pass_per_hour.get(time,0) + float(row['nb_montees'])
-                    pass_per_weekday[weekday] = pass_per_weekday.get(weekday,0) + float(row['nb_montees'])
-                    pass_per_day[isodate] = pass_per_day.get(isodate,0) + float(row['nb_montees'])
-                except ValueError:
-                    pass
-            except ValueError:
-                pass
-        except KeyError:
-            continue
+                    date = datetime.strptime(ridedates[row['course']],"%Y-%m-%d")
+                    try:
+                        time = datetime.strptime(row['heure_depart_real'], "%H:%M:%S").replace(second=0)
+                        weekday = date.weekday()
 
-with open('passengers_per_day.json', 'w') as f:
-    json.dump(pass_per_day, f)
+                        # Sum up all passengers joining a ride
+                        try:
+                            pass_per_hour[time] = pass_per_hour.get(time,0) + float(row['nb_montees'])
+                            pass_per_weekday[weekday] = pass_per_weekday.get(weekday,0) + float(row['nb_montees'])
+                            pass_per_day[date] = pass_per_day.get(date,0) + float(row['nb_montees'])
+                        except ValueError:
+                            pass
+                    except ValueError:
+                        pass
+                except KeyError:
+                    continue
+
+        pass_isoday = {}
+        for key, value in pass_per_day.iteritems():
+            pass_isoday[key.isoformat()] = value
+
+        with open('passengers_per_day.json', 'w') as f:
+            json.dump(pass_isoday, f)
+
+        return pass_per_day
+
+
+
+ridedates = parse_rides()
+pass_per_day = parse_passengers(ridedates)
 
 # In November 2016:
 # 4x Mon, Thu, Fri, Sat, Sun
 # 5x Tue, Wed
-for i, val in enumerate([4,5,5,4,4,4,4]):
-    pass_per_weekday[i] /= val
+#for i, val in enumerate([4,5,5,4,4,4,4]):
+#    pass_per_weekday[i] /= val
 
 
 # sorted by key, return a list of tuples
