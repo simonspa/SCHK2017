@@ -3,19 +3,35 @@ import random
 import csv
 import matplotlib.pyplot as plt
 from datetime import datetime
+import json
 
-# Relate rides with the date
-ridedates = {}
+def parse_rides():
+    # Relate rides with the date
 
-with open('QV-Courses-2016-11-nm.csv', 'rb') as ridefile:
-    ridereader = csv.DictReader(ridefile, delimiter=';')
-    for row in ridereader:
-        # Restrict to commerial rides, identified by "0"
-        if int(row['type_course']) == 0:
-            ridedates[row['course']] = row['date']
+    try:
+        # If JSON file exists, load and return
+        with open('ridedates.json') as f:
+            print "Found JSON file for rides."
+            return json.load(f)
+    except IOError:
+        print "No JSON file for rides, parsing database."
+        ridedates = {}
 
-print "Found " + str(len(ridedates)) + " rides in database."
+        with open('QV-Courses-2016-11-nm.csv', 'rb') as ridefile:
+            ridereader = csv.DictReader(ridefile, delimiter=';')
+            for row in ridereader:
+                # Restrict to commerial rides, identified by "0"
+                if int(row['type_course']) == 0:
+                    ridedates[row['course']] = row['date']
 
+            print "Found " + str(len(ridedates)) + " rides in database."
+
+            with open('ridedates.json', 'w') as f:
+                json.dump(ridedates, f)
+        return ridedates
+
+
+ridedates = parse_rides()
 
 pass_per_hour = {}
 pass_per_weekday = {}
@@ -27,7 +43,7 @@ with open('QV-Stops-2016-11-nm.csv', 'rb') as stopfile:
         try:
             date = datetime.strptime(ridedates[row['course']],"%Y-%m-%d")
             try:
-                time = datetime.strptime(row['heure_depart_real'], "%H:%M:%S")
+                time = datetime.strptime(row['heure_depart_real'], "%H:%M:%S").replace(second=0)
                 weekday = date.weekday()
 
                 # Sum up all passengers joining a ride
