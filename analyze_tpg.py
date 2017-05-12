@@ -11,8 +11,10 @@ with open('QV-Courses-2016-11-nm.csv', 'rb') as ridefile:
     ridereader = csv.DictReader(ridefile, delimiter=';')
     for row in ridereader:
         # Restrict to commerial rides, identified by "0"
-        if row['type_course'] == 0:
+        if int(row['type_course']) == 0:
             ridedates[row['course']] = row['date']
+
+print "Found " + str(len(ridedates)) + " rides in database."
 
 
 pass_per_hour = {}
