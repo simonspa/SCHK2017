@@ -79,10 +79,42 @@ def parse_passengers(ridedates):
 
         return pass_per_day
 
+def parse_rain():
+    # Relate precipitation with the date
+
+    try:
+        # If JSON file exists, load and return
+        with open('precipitation.json') as f:
+            print "Found JSON file for precipitation."
+            rain_isoday = json.load(f)
+            rain_day = {}
+            for key, value in rain_isoday.iteritems():
+                rain_day[dateutil.parser.parse(key)] = value
+            return rain_day
+    except IOError:
+        print "No JSON file for precipitation, parsing database."
+        precipitation = {}
+
+        with open('prec_11.dat', 'rb') as rainfile:
+            precipeader = csv.DictReader(rainfile, delimiter=',')
+            for row in precipeader:
+                date = datetime.strptime(row['datetime'],"%Y-%m-%d %H:%M:%S").replace(hour=0,minute=0,second=0)
+                precipitation[date] = precipitation.get(date, 0) + float(row['y'])
+
+            print "Found " + str(len(precipitation)) + " rain datasets in database."
+
+            isorain = {}
+            for key, value in precipitation.iteritems():
+                isorain[key.isoformat()] = value
+
+            with open('precipitation.json', 'w') as f:
+                json.dump(isorain, f)
+        return precipitation
 
 
 ridedates = parse_rides()
 pass_per_day = parse_passengers(ridedates)
+precipitation = parse_rain()
 
 # In November 2016:
 # 4x Mon, Thu, Fri, Sat, Sun
