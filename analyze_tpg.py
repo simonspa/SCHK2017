@@ -30,12 +30,13 @@ def parse_rides():
                 json.dump(ridedates, f)
         return ridedates
 
-
 ridedates = parse_rides()
 
 pass_per_hour = {}
 pass_per_weekday = {}
+pass_per_day = {}
 
+print "Parsing passenger data."
 with open('QV-Stops-2016-11-nm.csv', 'rb') as stopfile:
     stopsreader = csv.DictReader(stopfile, delimiter=';')
     for row in stopsreader:
@@ -46,16 +47,21 @@ with open('QV-Stops-2016-11-nm.csv', 'rb') as stopfile:
                 time = datetime.strptime(row['heure_depart_real'], "%H:%M:%S").replace(second=0)
                 weekday = date.weekday()
 
+                isodate = date.isoformat()
                 # Sum up all passengers joining a ride
                 try:
                     pass_per_hour[time] = pass_per_hour.get(time,0) + float(row['nb_montees'])
                     pass_per_weekday[weekday] = pass_per_weekday.get(weekday,0) + float(row['nb_montees'])
+                    pass_per_day[isodate] = pass_per_day.get(isodate,0) + float(row['nb_montees'])
                 except ValueError:
                     pass
             except ValueError:
                 pass
         except KeyError:
             continue
+
+with open('passengers_per_day.json', 'w') as f:
+    json.dump(pass_per_day, f)
 
 # In November 2016:
 # 4x Mon, Thu, Fri, Sat, Sun
@@ -66,12 +72,14 @@ for i, val in enumerate([4,5,5,4,4,4,4]):
 
 # sorted by key, return a list of tuples
 #plot = sorted(pass_per_hour.items())
-plot = sorted(pass_per_weekday.items())
+#plot = sorted(pass_per_weekday.items())
+plot = sorted(pass_per_day.items())
 
 
 # unpack a list of pairs into two tuples
 x, y = zip(*plot) 
 
 plt.plot(x, y)
+plt.savefig('passengers_per_day.png')
 plt.show()
 
