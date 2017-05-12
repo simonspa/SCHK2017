@@ -123,27 +123,30 @@ def parse_rain(month):
         return precipitation
 
 
-def show_plot(mydict,name,x="",y=""):
+def show_plot(mydict,name,xl="",yl=""):
 # sorted by key, return a list of tuples
     plot = sorted(mydict.items())
 
     # unpack a list of pairs into two tuples
     x, y = zip(*plot)
-    plt.xlabel(x)
-    plt.ylabel(y)
+    plt.xlabel(xl)
+    plt.ylabel(yl)
     plt.plot(x, y)
     plt.fill_between(x, y)
     plt.savefig(name)
     plt.show()
 
-def show_scatter(dict1,dict2,name,x="",y=""):
+def show_scatter(dict1,dict2,name,xl="",yl=""):
     x = []
     y = []
     for key, value in dict2.iteritems():
         x.append(dict1.get(key,0))
         y.append(value)
 
+    plt.xlabel(xl)
+    plt.ylabel(yl)
     plt.scatter(x, y)
+    plt.savefig(name)
     plt.show()
 
 
@@ -205,10 +208,9 @@ for i, val in enumerate(weekday_mult):
     precip_week[i] /= val
 
 
-show_plot(peak_week,"peak_week_" + month + ".png")
-
-
-#show_scatter(peak_week,precip_week,"pp_week_" + month + ".png")
+show_plot(peak_week,"peak_week_" + month + ".png","weekday","# passengers (peak)")
+show_plot(precip_week,"precip_week_" + month + ".png","weekday","precipitation [mm]")
+show_scatter(peak_week,precip_week,"pp_week_" + month + ".png","#p in morning peak","precipitation [mm]")
 
 
 # Mondays only
@@ -222,31 +224,29 @@ for key, value in rain_day.iteritems():
         rain_monday[key] = rain_monday.get(key,0) + value
 print peak_monday
 print rain_monday
-show_scatter(peak_monday,rain_monday,"pp_monday_" + month + ".png")
+show_scatter(peak_monday,rain_monday,"pp_monday_" + month + ".png","#passengers (peak), Monday","precipitation in peak [mm]")
 
 
 
 
 
 # other fun:
-pass_per_hour = {} # passengers over the day (hourly)
+pass_per_hour_wk = {} # passengers over the day (hourly)
 for key, value in pass_per_day.iteritems():
+    if key.weekday() > 4:
+        continue
     time = key.replace(year=2016,month=1,day=1)
-    pass_per_hour[time] = pass_per_hour.get(time,0) + value
+    pass_per_hour_wk[time] = pass_per_hour_wk.get(time,0) + value
 
+show_plot(pass_per_hour_wk,"pass_per_hour_" + month + ".png","daytime","# passengers, week")
 
-# sorted by key, return a list of tuples
-plot = sorted(precip_week.items())
+pass_per_hour_wke = {} # passengers over the day (hourly)
+for key, value in pass_per_day.iteritems():
+    if key.weekday() < 5:
+        continue
+    time = key.replace(year=2016,month=1,day=1)
+    pass_per_hour_wke[time] = pass_per_hour_wke.get(time,0) + value
 
-# unpack a list of pairs into two tuples
-x, y = zip(*plot) 
-
-
-plt.plot(x, y)
-plt.fill_between(x, y)
-plt.ylim(0.0, plt.ylim()[1]+50)
-plt.xlim(0, 6)
-#plt.savefig('passengers_per_day.png')
-#plt.show()
+show_plot(pass_per_hour_wke,"pass_per_hour_wke" + month + ".png","daytime","# passengers, weekend")
 
 
