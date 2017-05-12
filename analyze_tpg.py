@@ -2,7 +2,7 @@ import datetime
 import random
 import csv
 import matplotlib.pyplot as plt
-from datetime import datetime
+from datetime import datetime, timedelta
 import dateutil.parser
 import json
 
@@ -44,8 +44,6 @@ def parse_passengers(ridedates):
             return pass_day
     except IOError:
         print "No JSON file found, parsing passenger data."
-        pass_per_hour = {}
-        pass_per_weekday = {}
         pass_per_day = {}
 
         with open('QV-Stops-2016-11-nm.csv', 'rb') as stopfile:
@@ -55,13 +53,11 @@ def parse_passengers(ridedates):
                 try:
                     date = datetime.strptime(ridedates[row['course']],"%Y-%m-%d")
                     try:
-                        time = datetime.strptime(row['heure_depart_real'], "%H:%M:%S").replace(second=0)
-                        weekday = date.weekday()
+                        time = datetime.strptime(row['heure_depart_real'], "%H:%M:%S").replace(minute=0,second=0)
+                        date = date + timedelta(hours=time.hour)
 
                         # Sum up all passengers joining a ride
                         try:
-                            pass_per_hour[time] = pass_per_hour.get(time,0) + float(row['nb_montees'])
-                            pass_per_weekday[weekday] = pass_per_weekday.get(weekday,0) + float(row['nb_montees'])
                             pass_per_day[date] = pass_per_day.get(date,0) + float(row['nb_montees'])
                         except ValueError:
                             pass
@@ -98,7 +94,7 @@ def parse_rain():
         with open('prec_11.dat', 'rb') as rainfile:
             precipeader = csv.DictReader(rainfile, delimiter=',')
             for row in precipeader:
-                date = datetime.strptime(row['datetime'],"%Y-%m-%d %H:%M:%S").replace(hour=0,minute=0,second=0)
+                date = datetime.strptime(row['datetime'],"%Y-%m-%d %H:%M:%S").replace(minute=0,second=0)
                 precipitation[date] = precipitation.get(date, 0) + float(row['y'])
 
             print "Found " + str(len(precipitation)) + " rain datasets in database."
@@ -126,12 +122,21 @@ precipitation = parse_rain()
 x = []
 y = []
 for key, value in precipitation.iteritems():
-    x.append(pass_per_day[key])
+    if key.hour < 6 or key.hour > 9:
+        continue
+    if key.weekday == 5 or key.weekday == 6:
+        continue
+    x.append(pass_per_day.get(key,0))
     y.append(value)
+
+pass_per_hour = {}
+for key, value in pass_per_day.iteritems():
+    time = key.replace(year=2016,month=1,day=1)
+    pass_per_hour[time] = pass_per_hour.get(time,0) + value
 
 
 # sorted by key, return a list of tuples
-#plot = sorted(pass_per_hour.items())
+plot = sorted(pass_per_hour.items())
 #plot = sorted(pass_per_weekday.items())
 #plot = sorted(pass_per_day.items())
 #plot = sorted(precipitation.items())
