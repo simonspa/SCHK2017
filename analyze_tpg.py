@@ -123,16 +123,24 @@ precipitation = parse_rain()
 #    pass_per_weekday[i] /= val
 
 
+x = []
+y = []
+for key, value in precipitation.iteritems():
+    x.append(pass_per_day[key])
+    y.append(value)
+
+
 # sorted by key, return a list of tuples
 #plot = sorted(pass_per_hour.items())
 #plot = sorted(pass_per_weekday.items())
-plot = sorted(pass_per_day.items())
-
+#plot = sorted(pass_per_day.items())
+#plot = sorted(precipitation.items())
 
 # unpack a list of pairs into two tuples
-x, y = zip(*plot) 
+#x, y = zip(*plot) 
 
-plt.plot(x, y)
-plt.savefig('passengers_per_day.png')
+plt.scatter(x, y)
+#plt.plot(x, y)
+#plt.savefig('passengers_per_day.png')
 plt.show()
 
