@@ -122,6 +122,19 @@ def parse_rain(month):
                 json.dump(isorain, f)
         return precipitation
 
+
+def show_plot(mydict):
+# sorted by key, return a list of tuples
+    plot = sorted(mydict.items())
+
+    # unpack a list of pairs into two tuples
+    x, y = zip(*plot) 
+    plt.plot(x, y)
+    plt.fill_between(x, y)
+    plt.show()
+
+
+
 print 'Argument List:', str(sys.argv)
 if len(sys.argv) == 1:
     sys.exit(0)
@@ -136,8 +149,12 @@ precipitation = parse_rain(month)
 # In November 2016:
 # 4x Mon, Thu, Fri, Sat, Sun
 # 5x Tue, Wed
-#for i, val in enumerate([4,5,5,4,4,4,4]):
-#    pass_per_weekday[i] /= val
+weekday_mult = []
+if month == "06":
+    weekday_mult = [4,4,5,5,4,4,4]
+else:
+    weekday_mult = [4,5,5,4,4,4,4]
+
 
 # preprocess passengers:
 pass_day = {}
@@ -147,6 +164,16 @@ for key, value in pass_per_day.iteritems():
     time = key.replace(hour=0)
     pass_day[time] = pass_day.get(time,0) + value
 print "Passenger points: " + str(len(pass_day))
+
+peak_week = {}
+for key, value in pass_day.iteritems():
+    time = key.weekday()
+    peak_week[time] = peak_week.get(time,0) + value
+
+for i, val in enumerate(weekday_mult):
+    peak_week[i] /= val
+
+show_plot(peak_week)
 
 # preprocess rain
 rain_day = {}
@@ -180,10 +207,6 @@ for key, value in precipitation.iteritems():
 
 
 # sorted by key, return a list of tuples
-#plot = sorted(pass_per_hour.items())
-#plot = sorted(pass_per_weekday.items())
-#plot = sorted(pass_per_day.items())
-#plot = sorted(precipitation.items())
 plot = sorted(precip_week.items())
 
 # unpack a list of pairs into two tuples
